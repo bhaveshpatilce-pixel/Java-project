@@ -1,1 +1,391 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
 
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Google Classroom Lite — Course & Assignment Management System" />
+  <title>Classroom Lite — LMS</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+  <!-- ===== AUTH SECTION ===== -->
+  <div id="authSection" class="auth-wrapper">
+    <div class="auth-card">
+      <div class="auth-logo">📚</div>
+
+      <!-- LOGIN FORM -->
+      <div id="loginForm">
+        <h1>Welcome back</h1>
+        <p class="auth-subtitle">Sign in to Classroom Lite</p>
+        <form onsubmit="handleLogin(event)">
+          <div class="form-group">
+            <label>Email</label>
+            <input class="form-control" type="email" id="loginEmail" required placeholder="you@example.com" />
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input class="form-control" type="password" id="loginPassword" required placeholder="••••••••" />
+          </div>
+          <button class="btn btn-primary btn-block" type="submit">Sign In</button>
+        </form>
+        <div class="auth-toggle">
+          Don't have an account? <a onclick="toggleAuth('signup')">Sign Up</a>
+        </div>
+      </div>
+
+      <!-- SIGNUP FORM -->
+      <div id="signupForm" style="display:none;">
+        <h1>Create account</h1>
+        <p class="auth-subtitle">Get started with Classroom Lite</p>
+        <form onsubmit="handleSignup(event)">
+          <div class="form-group">
+            <label>Full Name</label>
+            <input class="form-control" type="text" id="signupName" required placeholder="John Doe" />
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input class="form-control" type="email" id="signupEmail" required placeholder="you@example.com" />
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input class="form-control" type="password" id="signupPassword" required minlength="6"
+              placeholder="min 6 characters" />
+          </div>
+          <div class="form-group">
+            <label>I am a…</label>
+            <div class="role-select">
+              <input type="radio" name="signupRole" id="roleTeacher" value="teacher" checked />
+              <label for="roleTeacher">👨‍🏫 Teacher</label>
+              <input type="radio" name="signupRole" id="roleStudent" value="student" />
+              <label for="roleStudent">👨‍🎓 Student</label>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-block" type="submit">Create Account</button>
+        </form>
+        <div class="auth-toggle">
+          Already have an account? <a onclick="toggleAuth('login')">Sign In</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== APP SHELL ===== -->
+  <div id="appShell" class="app-shell">
+
+    <!-- TOPBAR -->
+    <nav class="topbar">
+      <button class="topbar-hamburger" id="hamburgerBtn" onclick="toggleSidebar()">☰</button>
+      <div class="topbar-brand">📚 <span>Classroom Lite</span></div>
+      <div class="topbar-spacer"></div>
+      <div class="topbar-actions">
+        <button class="btn-icon" id="themeToggle" title="Toggle theme">🌙</button>
+        <div class="topbar-avatar" id="topbarAvatar"></div>
+      </div>
+    </nav>
+
+    <!-- SIDEBAR OVERLAY (mobile) -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <ul class="sidebar-nav" id="sidebarNav">
+        <!-- Populated by JS based on role -->
+      </ul>
+      <div class="sidebar-divider"></div>
+      <ul class="sidebar-nav">
+        <li>
+          <button class="sidebar-link" onclick="handleLogout()">
+            <span class="icon">🚪</span> Sign Out
+          </button>
+        </li>
+      </ul>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="content" id="mainContent">
+
+      <!-- ══════ TEACHER VIEWS ══════ -->
+
+      <!-- Dashboard -->
+      <div class="view" id="view-dashboard">
+        <div class="page-header">
+          <h2>Dashboard</h2>
+        </div>
+        <div class="stats-row" id="statsRow"></div>
+        <h3 style="margin-bottom:12px;font-size:1rem;">Recent Courses</h3>
+        <div class="course-grid" id="dashRecentCourses"></div>
+      </div>
+
+      <!-- My Courses (Teacher) -->
+      <div class="view" id="view-courses">
+        <div class="page-header">
+          <h2>My Courses</h2>
+          <div class="page-header-actions">
+            <input class="search-input" type="text" id="courseSearch" placeholder="Search courses…"
+              oninput="renderCourses()" />
+            <button class="btn btn-primary" onclick="openModal('courseModal')">+ Create Course</button>
+          </div>
+        </div>
+        <div class="course-grid" id="courseGrid"></div>
+        <div class="empty-state" id="coursesEmpty" style="display:none;">
+          <div class="empty-icon">📖</div>
+          <p>No courses yet. Create your first course!</p>
+        </div>
+      </div>
+
+      <!-- Course Detail (Teacher) -->
+      <div class="view" id="view-course-detail">
+        <button class="back-link" onclick="navigateTo('view-courses')">← Back to Courses</button>
+        <div id="courseDetailBanner"></div>
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="pane-announcements" onclick="switchTab(this)">Announcements</button>
+          <button class="tab-btn" data-tab="pane-assignments" onclick="switchTab(this)">Assignments</button>
+          <button class="tab-btn" data-tab="pane-students" onclick="switchTab(this)">Students</button>
+        </div>
+        <!-- Announcements Pane -->
+        <div class="tab-pane active" id="pane-announcements">
+          <div style="margin-bottom:16px;">
+            <button class="btn btn-secondary" onclick="openModal('announceModal')">📢 Post Announcement</button>
+          </div>
+          <div id="announcementList"></div>
+        </div>
+        <!-- Assignments Pane -->
+        <div class="tab-pane" id="pane-assignments">
+          <div style="margin-bottom:16px;">
+            <button class="btn btn-primary" onclick="openModal('assignmentModal')">+ Add Assignment</button>
+          </div>
+          <div id="assignmentList"></div>
+        </div>
+        <!-- Students Pane -->
+        <div class="tab-pane" id="pane-students">
+          <div id="studentList"></div>
+        </div>
+      </div>
+
+      <!-- Submissions (Teacher) -->
+      <div class="view" id="view-submissions">
+        <div class="page-header">
+          <h2>All Submissions</h2>
+          <div class="page-header-actions">
+            <button class="btn btn-secondary" onclick="exportCSV()">📥 Export CSV</button>
+          </div>
+        </div>
+        <div class="table-wrap" id="submissionsTable"></div>
+        <div class="empty-state" id="submissionsEmpty" style="display:none;">
+          <div class="empty-icon">📭</div>
+          <p>No submissions yet.</p>
+        </div>
+      </div>
+
+      <!-- ══════ STUDENT VIEWS ══════ -->
+
+      <!-- Student Dashboard -->
+      <div class="view" id="view-student-dashboard">
+        <div class="page-header">
+          <h2>My Dashboard</h2>
+        </div>
+        <div class="stats-row" id="studentStatsRow"></div>
+        <h3 style="margin-bottom:12px;font-size:1rem;">My Enrolled Courses</h3>
+        <div class="course-grid" id="studentDashCourses"></div>
+        <div class="empty-state" id="studentDashCoursesEmpty" style="display:none;">
+          <div class="empty-icon">📚</div>
+          <p>You haven't enrolled in any courses yet. Join one!</p>
+        </div>
+      </div>
+
+      <!-- Browse / My Courses (Student) -->
+      <div class="view" id="view-student-courses">
+        <div class="page-header">
+          <h2>My Courses</h2>
+          <div class="page-header-actions">
+            <input class="search-input" type="text" id="studentCourseSearch" placeholder="Search…"
+              oninput="renderStudentCourses()" />
+            <button class="btn btn-primary" onclick="openModal('joinModal')">🔑 Join Course</button>
+          </div>
+        </div>
+        <div class="course-grid" id="studentCourseGrid"></div>
+        <div class="empty-state" id="studentCoursesEmpty" style="display:none;">
+          <div class="empty-icon">📚</div>
+          <p>No enrolled courses. Use a course code to join!</p>
+        </div>
+      </div>
+
+      <!-- Student: Course Detail -->
+      <div class="view" id="view-student-course-detail">
+        <button class="back-link" onclick="navigateTo('view-student-courses')">← Back to Courses</button>
+        <div id="studentCourseDetailBanner"></div>
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="spane-announcements" onclick="switchTab(this)">Announcements</button>
+          <button class="tab-btn" data-tab="spane-assignments" onclick="switchTab(this)">Assignments</button>
+        </div>
+        <div class="tab-pane active" id="spane-announcements">
+          <div id="studentAnnouncementList"></div>
+        </div>
+        <div class="tab-pane" id="spane-assignments">
+          <div id="studentAssignmentList"></div>
+        </div>
+      </div>
+
+      <!-- Student: My Grades -->
+      <div class="view" id="view-grades">
+        <div class="page-header">
+          <h2>My Grades</h2>
+        </div>
+        <div class="table-wrap" id="gradesTable"></div>
+        <div class="empty-state" id="gradesEmpty" style="display:none;">
+          <div class="empty-icon">📊</div>
+          <p>No grades available yet.</p>
+        </div>
+      </div>
+
+      <!-- Student: Profile -->
+      <div class="view" id="view-profile">
+        <div class="page-header">
+          <h2>My Profile</h2>
+        </div>
+        <div id="profileContent"></div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ===== MODALS ===== -->
+
+  <!-- Create Course -->
+  <div class="modal-overlay" id="courseModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Create Course</h3>
+        <button class="modal-close" onclick="closeModal('courseModal')">&times;</button>
+      </div>
+      <form id="courseForm" onsubmit="handleCreateCourse(event)">
+        <div class="form-group">
+          <label>Course Name</label>
+          <input class="form-control" type="text" id="courseName" required />
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea class="form-control" id="courseDesc" required></textarea>
+        </div>
+        <button class="btn btn-primary btn-block" type="submit">Create</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Assignment -->
+  <div class="modal-overlay" id="assignmentModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Add Assignment</h3>
+        <button class="modal-close" onclick="closeModal('assignmentModal')">&times;</button>
+      </div>
+      <form id="assignmentForm" onsubmit="handleAddAssignment(event)">
+        <div class="form-group">
+          <label>Title</label>
+          <input class="form-control" type="text" id="assignTitle" required />
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea class="form-control" id="assignDesc" required></textarea>
+        </div>
+        <div class="form-group">
+          <label>Total Marks</label>
+          <input class="form-control" type="number" id="assignMarks" min="1" max="1000" value="100" required />
+        </div>
+        <div class="form-group">
+          <label>Deadline</label>
+          <input class="form-control" type="datetime-local" id="assignDeadline" required />
+        </div>
+        <button class="btn btn-primary btn-block" type="submit">Add Assignment</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Post Announcement -->
+  <div class="modal-overlay" id="announceModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Post Announcement</h3>
+        <button class="modal-close" onclick="closeModal('announceModal')">&times;</button>
+      </div>
+      <form id="announceForm" onsubmit="handlePostAnnouncement(event)">
+        <div class="form-group">
+          <label>Announcement</label>
+          <textarea class="form-control" id="announceText" required
+            placeholder="Share something with your class…"></textarea>
+        </div>
+        <button class="btn btn-primary btn-block" type="submit">Post</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Join Course (Student) -->
+  <div class="modal-overlay" id="joinModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Join Course</h3>
+        <button class="modal-close" onclick="closeModal('joinModal')">&times;</button>
+      </div>
+      <form id="joinForm" onsubmit="handleJoinCourse(event)">
+        <div class="form-group">
+          <label>Course Code</label>
+          <input class="form-control" type="text" id="joinCode" required placeholder="e.g. ABC123" maxlength="6"
+            style="text-transform:uppercase;font-family:monospace;font-size:1.2rem;text-align:center;letter-spacing:4px;" />
+        </div>
+        <button class="btn btn-primary btn-block" type="submit">Join</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Submit Assignment (Student) -->
+  <div class="modal-overlay" id="submitModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Submit Assignment</h3>
+        <button class="modal-close" onclick="closeModal('submitModal')">&times;</button>
+      </div>
+      <form id="submitForm" onsubmit="handleSubmitAssignment(event)">
+        <input type="hidden" id="submitAssignId" />
+        <div class="form-group">
+          <label>Your Submission</label>
+          <textarea class="form-control" id="submissionText" required
+            placeholder="Write your answer or paste a link…"></textarea>
+        </div>
+        <button class="btn btn-primary btn-block" type="submit">Submit</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Grade Submission (Teacher) -->
+  <div class="modal-overlay" id="gradeModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Grade Submission</h3>
+        <button class="modal-close" onclick="closeModal('gradeModal')">&times;</button>
+      </div>
+      <div id="gradeSubmissionInfo" style="margin-bottom:16px;"></div>
+      <form id="gradeForm" onsubmit="handleGradeSubmission(event)">
+        <input type="hidden" id="gradeSubId" />
+        <div class="form-group">
+          <label>Marks</label>
+          <input class="form-control" type="number" id="gradeMarks" min="0" required />
+        </div>
+        <div class="form-group">
+          <label>Feedback</label>
+          <textarea class="form-control" id="gradeFeedback" placeholder="Optional feedback…"></textarea>
+        </div>
+        <button class="btn btn-primary btn-block" type="submit">Save Grade</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===== TOAST ===== -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="script.js"></script>
+</body>
+
+</html>
