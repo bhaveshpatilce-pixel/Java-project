@@ -545,7 +545,7 @@ async function renderAllSubmissions() {
         const graded = s.marks !== null && s.marks !== undefined;
         return `
             <tr>
-              <td>${esc(s.studentId?.name || 'Student')}</td>
+              <td>${esc(s.studentName || 'Student')}</td>
               <td>${esc(a?.title || 'Unknown')}</td>
               <td>${fmtDate(s.submittedAt)}</td>
               <td>${graded ? `${s.marks}/${a?.totalMarks || 100}` : '—'}</td>
@@ -795,6 +795,38 @@ function renderProfile() {
       </div>
     </div>
   `;
+}
+
+/** Export Submissions as CSV */
+async function exportCSV() {
+    try {
+        const subs = await fetchTeacherSubmissions();
+        if (subs.length === 0) return showToast('No data to export.', 'error');
+
+        const headers = ['Student', 'Email', 'Assignment', 'Marks', 'Total Marks', 'Status', 'Submitted At'];
+        const rows = subs.map(s => [
+            s.studentName || 'Unknown',
+            s.studentId?.email || '',
+            s.assignmentId?.title || 'Unknown',
+            s.marks ?? '—',
+            s.assignmentId?.totalMarks || '—',
+            s.marks !== null ? 'Graded' : 'Pending',
+            fmtDate(s.submittedAt)
+        ]);
+
+        const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `submissions_export_${new Date().toISOString().slice(0, 10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast('CSV exported successfully!');
+    } catch (err) {
+        showToast('Failed to export CSV.', 'error');
+    }
 }
 
 // ══════════════════════════════════════════

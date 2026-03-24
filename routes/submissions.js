@@ -58,7 +58,9 @@ router.post('/', auth, async (req, res) => {
 // ────────────────────────────────────────────
 router.get('/assignment/:assignmentId', auth, async (req, res) => {
   try {
-    const submissions = await Submission.find({ assignmentId: req.params.assignmentId }).sort({ createdAt: -1 });
+    const submissions = await Submission.find({ assignmentId: req.params.assignmentId })
+      .populate('studentId', 'name email')
+      .sort({ createdAt: -1 });
     res.json(submissions);
   } catch (error) {
     console.error('Get submissions error:', error.message);
@@ -67,16 +69,20 @@ router.get('/assignment/:assignmentId', auth, async (req, res) => {
 });
 
 // ────────────────────────────────────────────
-// GET /api/submissions/my — Get student's own submissions
+// GET /api/submissions/student/me — Get student's own submissions
 // ────────────────────────────────────────────
-router.get('/my', auth, async (req, res) => {
+router.get('/student/me', auth, async (req, res) => {
   try {
     const submissions = await Submission.find({ studentId: req.user.id })
-      .populate('assignmentId', 'title totalMarks courseId deadline')
+      .populate({
+        path: 'assignmentId',
+        select: 'title totalMarks courseId deadline',
+        populate: { path: 'courseId', select: 'name' }
+      })
       .sort({ createdAt: -1 });
     res.json(submissions);
   } catch (error) {
-    console.error('Get my submissions error:', error.message);
+    console.error('Get student submissions error:', error.message);
     res.status(500).json({ message: 'Server error.' });
   }
 });
@@ -101,11 +107,30 @@ router.get('/teacher', auth, async (req, res) => {
     // Get all submissions for those assignments
     const submissions = await Submission.find({ assignmentId: { $in: assignmentIds } })
       .populate('assignmentId', 'title totalMarks courseId')
+      .populate('studentId', 'name email')
       .sort({ createdAt: -1 });
 
     res.json(submissions);
   } catch (error) {
     console.error('Get teacher submissions error:', error.message);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// ────────────────────────────────────────────
+// GET /api/submissions/:id — Get single submission
+// ────────────────────────────────────────────
+router.get('/:id', auth, async (req, res) => {
+  try {
+    const submission = await Submission.findById(req.params.id)
+      .populate('assignmentId', 'title totalMarks courseId deadline');
+    
+    if (!submission) {
+      return res.status(404).json({ message: 'Submission not found.' });
+    }
+    res.json(submission);
+  } catch (error) {
+    console.error('Get submission error:', error.message);
     res.status(500).json({ message: 'Server error.' });
   }
 });
