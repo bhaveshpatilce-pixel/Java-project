@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const dotenv = require('dotenv');
+const path = require('path');
 const connectDB = require('./config/db');
 
 // Load environment variables
@@ -18,7 +19,6 @@ app.use(cors());
 app.use(express.json());
 
 // Serve Static Frontend Files
-const path = require('path');
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ── API Routes ─────────────────────────────
@@ -28,10 +28,10 @@ app.use('/api/assignments', require('./routes/assignments'));
 app.use('/api/submissions', require('./routes/submissions'));
 app.use('/api/announcements', require('./routes/announcements'));
 
-// ── Fallback to Frontend index.html ────────────────
-app.get('*', (req, res) => {
-  if (!req.path.startsWith('/api')) {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// ── Fallback to Frontend index.html or 404 ────────────────
+app.use((req, res) => {
+  if (req.method === 'GET' && !req.originalUrl.startsWith('/api')) {
+    res.sendFile(path.resolve(__dirname, 'public', 'index.html'));
   } else {
     res.status(404).json({ message: 'API Route not found.' });
   }
