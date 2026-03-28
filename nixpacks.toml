@@ -1,9 +1,0 @@
-# nixpacks.toml for Classroom Lite (Multi-stack: Node.js + Java)
-[phases.setup]
-nixPkgs = ["nodejs", "jdk21"] # Ensures both runtimes are available on Railway
-
-[phases.build]
-cmds = ["npm install", "javac backend/java/*.java"] # Compiles the Java components during deployment
-
-[start]
-cmd = "node server.js"

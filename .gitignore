@@ -1,11 +1,5 @@
 node_modules/
 .env
 *.log
-backend/node_modules/
-backend/out.log
-.DS_Store
-dist/
-build/
-*.class
 backend/java/*.class
-public/exports/
+package-lock.json

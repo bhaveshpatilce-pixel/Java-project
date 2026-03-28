@@ -829,23 +829,6 @@ async function exportCSV() {
     }
 }
 
-/** Export via Java Component (25% Java logic) */
-async function exportJava() {
-    showToast('Processing via Java Engine...', 'success');
-    try {
-        const data = await apiFetch('/submissions/export-java');
-        const link = document.createElement("a");
-        link.href = data.downloadUrl;
-        link.download = data.downloadUrl.split('/').pop();
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        showToast('Java Export Successful!');
-    } catch (err) {
-        showToast(err.message, 'error');
-    }
-}
-
 // ══════════════════════════════════════════
 //  INIT
 // ══════════════════════════════════════════

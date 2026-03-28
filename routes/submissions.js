@@ -167,83 +167,81 @@ router.put('/:id/grade', auth, async (req, res) => {
   }
 });
 
-const JavaBridge = require('../backend/JavaBridge');
+const { spawn } = require('child_process');
+const path = require('path');
 
-// ────────────────────────────────────────────
-// GET /api/submissions/stats-java — Get performance stats via Java Engine
-// ────────────────────────────────────────────
-router.get('/stats-java', auth, async (req, res) => {
-  try {
-    if (req.user.role !== 'teacher') {
-      return res.status(403).json({ message: 'Only teachers can access statistics.' });
-    }
-
-    // Get all submissions for teacher's courses
-    const courses = await Course.find({ teacherId: req.user.id });
-    const courseIds = courses.map((c) => c._id);
-    const assignments = await Assignment.find({ courseId: { $in: courseIds } });
-    const assignmentIds = assignments.map((a) => a._id);
-    const submissions = await Submission.find({ assignmentId: { $in: assignmentIds } });
-
-    if (submissions.length === 0) {
-      return res.json({ message: 'No submissions yet.' });
-    }
-
-    const data = submissions.map(s => ({ studentName: s.studentName, marks: s.marks || 0 }));
+// Helper to run Java components
+const runJava = (className, args = []) => {
+  return new Promise((resolve, reject) => {
+    // Classpath should be the root of the project to find the backend.java package
+    const rootPath = path.resolve(__dirname, '..');
+    const child = spawn('java', ['-cp', rootPath, `backend.java.${className}`, ...args.map(a => String(a))]);
     
-    // --- CALL JAVA ENGINE ---
-    const statsOutput = await JavaBridge.getStats(data);
-    res.json({ output: statsOutput });
+    let output = '';
+    let errorOutput = '';
+
+    child.stdout.on('data', (data) => output += data.toString());
+    child.stderr.on('data', (data) => errorOutput += data.toString());
+
+    child.on('close', (code) => {
+      if (code !== 0) {
+        console.error(`Java ${className} Error:`, errorOutput);
+        return reject(`Java process exited with code ${code}`);
+      }
+      resolve(output.trim());
+    });
+  });
+};
+
+// ────────────────────────────────────────────
+// GET /api/submissions/assignment/:assignmentId/stats — Hybrid Java Stats
+// ────────────────────────────────────────────
+router.get('/assignment/:assignmentId/stats', auth, async (req, res) => {
+  try {
+    const submissions = await Submission.find({ assignmentId: req.params.assignmentId, marks: { $ne: null } });
+    
+    if (submissions.length === 0) {
+      return res.status(404).json({ message: 'No graded submissions found for stats.' });
+    }
+
+    const marks = submissions.map(s => s.marks);
+    
+    // Call Java Stats Engine
+    const statsResult = await runJava('StatsEngine', marks);
+    res.json(JSON.parse(statsResult));
   } catch (error) {
-    console.error('Java Stats error:', error.message);
-    res.status(500).json({ message: 'Java Engine error.', error: error.message });
+    console.error('Stats error:', error);
+    res.status(500).json({ message: 'Error calculating stats with Java.' });
   }
 });
 
 // ────────────────────────────────────────────
-// GET /api/submissions/export-java — Export to CSV via Java Engine
+// GET /api/submissions/assignment/:assignmentId/export — Hybrid Java CSV Export
 // ────────────────────────────────────────────
-router.get('/export-java', auth, async (req, res) => {
+router.get('/assignment/:assignmentId/export', auth, async (req, res) => {
   try {
-    if (req.user.role !== 'teacher') {
-      return res.status(403).json({ message: 'Only teachers can export data.' });
-    }
-
-    const courses = await Course.find({ teacherId: req.user.id });
-    const courseIds = courses.map((c) => c._id);
-    const assignments = await Assignment.find({ courseId: { $in: courseIds } });
-    const assignmentIds = assignments.map((a) => a._id);
-    const submissions = await Submission.find({ assignmentId: { $in: assignmentIds } })
-      .populate('assignmentId', 'title totalMarks');
+    const submissions = await Submission.find({ assignmentId: req.params.assignmentId })
+      .populate('studentId', 'name');
 
     if (submissions.length === 0) {
-      return res.status(400).json({ message: 'No submissions to export.' });
+      return res.status(404).json({ message: 'No submissions found to export.' });
     }
 
-    const data = submissions.map(s => ({
-      name: s.studentName,
-      assignment: s.assignmentId?.title || 'Unknown',
-      marks: s.marks ?? '—',
-      total: s.assignmentId?.totalMarks || 100,
-      status: s.marks !== null ? 'Graded' : 'Pending'
-    }));
-
-    const outputPath = path.join(__dirname, `../public/exports/report_${Date.now()}.csv`);
-    
-    // Ensure export directory exists
-    const exportDir = path.dirname(outputPath);
-    if (!require('fs').existsSync(exportDir)) require('fs').mkdirSync(exportDir, { recursive: true });
-
-    // --- CALL JAVA ENGINE ---
-    await JavaBridge.exportCSV(data, outputPath);
-
-    res.json({ 
-      message: 'Export successful via Java Engine', 
-      downloadUrl: `/exports/${path.basename(outputPath)}` 
+    const exportData = [];
+    submissions.forEach(s => {
+      exportData.push(s.studentName || 'Unknown Student');
+      exportData.push(s.marks || 'Not Graded');
     });
+
+    // Call Java CSV Exporter
+    const csvContent = await runJava('CsvExporter', exportData);
+    
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename=assignment_${req.params.assignmentId}.csv`);
+    res.send(csvContent);
   } catch (error) {
-    console.error('Java Export error:', error.message);
-    res.status(500).json({ message: 'Java Engine error.', error: error.message });
+    console.error('Export error:', error);
+    res.status(500).json({ message: 'Error exporting CSV with Java.' });
   }
 });
 
