@@ -12,8 +12,9 @@ Classroom Lite is a modern, responsive Learning Management System (LMS) inspired
   - HTML5 & Semantic Tags (Structure)
   - Vanilla CSS (Custom Styling, Responsive Design, Dark/Light Mode)
   - Vanilla JavaScript (Dynamic UI, State Management, API Integration)
-* Backend:
-  - Node.js & Express.js (Server-side logic and REST APIs)
+* Backend & Core Engine:
+  - Node.js & Express.js (Server-side API and REST routing)
+  - Java 25 (Enterprise-grade Reporting, Statistics, and Data Processing - 25% of project logic)
 * Database:
   - MongoDB (NoSQL database for flexible data storage)
   - Mongoose (Object Data Modeling)

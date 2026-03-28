@@ -167,4 +167,85 @@ router.put('/:id/grade', auth, async (req, res) => {
   }
 });
 
+const JavaBridge = require('../backend/JavaBridge');
+
+// ────────────────────────────────────────────
+// GET /api/submissions/stats-java — Get performance stats via Java Engine
+// ────────────────────────────────────────────
+router.get('/stats-java', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'teacher') {
+      return res.status(403).json({ message: 'Only teachers can access statistics.' });
+    }
+
+    // Get all submissions for teacher's courses
+    const courses = await Course.find({ teacherId: req.user.id });
+    const courseIds = courses.map((c) => c._id);
+    const assignments = await Assignment.find({ courseId: { $in: courseIds } });
+    const assignmentIds = assignments.map((a) => a._id);
+    const submissions = await Submission.find({ assignmentId: { $in: assignmentIds } });
+
+    if (submissions.length === 0) {
+      return res.json({ message: 'No submissions yet.' });
+    }
+
+    const data = submissions.map(s => ({ studentName: s.studentName, marks: s.marks || 0 }));
+    
+    // --- CALL JAVA ENGINE ---
+    const statsOutput = await JavaBridge.getStats(data);
+    res.json({ output: statsOutput });
+  } catch (error) {
+    console.error('Java Stats error:', error.message);
+    res.status(500).json({ message: 'Java Engine error.', error: error.message });
+  }
+});
+
+// ────────────────────────────────────────────
+// GET /api/submissions/export-java — Export to CSV via Java Engine
+// ────────────────────────────────────────────
+router.get('/export-java', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'teacher') {
+      return res.status(403).json({ message: 'Only teachers can export data.' });
+    }
+
+    const courses = await Course.find({ teacherId: req.user.id });
+    const courseIds = courses.map((c) => c._id);
+    const assignments = await Assignment.find({ courseId: { $in: courseIds } });
+    const assignmentIds = assignments.map((a) => a._id);
+    const submissions = await Submission.find({ assignmentId: { $in: assignmentIds } })
+      .populate('assignmentId', 'title totalMarks');
+
+    if (submissions.length === 0) {
+      return res.status(400).json({ message: 'No submissions to export.' });
+    }
+
+    const data = submissions.map(s => ({
+      name: s.studentName,
+      assignment: s.assignmentId?.title || 'Unknown',
+      marks: s.marks ?? '—',
+      total: s.assignmentId?.totalMarks || 100,
+      status: s.marks !== null ? 'Graded' : 'Pending'
+    }));
+
+    const outputPath = path.join(__dirname, `../public/exports/report_${Date.now()}.csv`);
+    
+    // Ensure export directory exists
+    const exportDir = path.dirname(outputPath);
+    if (!require('fs').existsSync(exportDir)) require('fs').mkdirSync(exportDir, { recursive: true });
+
+    // --- CALL JAVA ENGINE ---
+    await JavaBridge.exportCSV(data, outputPath);
+
+    res.json({ 
+      message: 'Export successful via Java Engine', 
+      downloadUrl: `/exports/${path.basename(outputPath)}` 
+    });
+  } catch (error) {
+    console.error('Java Export error:', error.message);
+    res.status(500).json({ message: 'Java Engine error.', error: error.message });
+  }
+});
+
 module.exports = router;
+
