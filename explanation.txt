@@ -1,0 +1,69 @@
+================================================================================
+                    CLASSROOM LITE - WEBSITE EXPLANATION FOR PPT
+================================================================================
+
+1. PROJECT OVERVIEW
+-------------------
+Classroom Lite is a modern, responsive Learning Management System (LMS) inspired by Google Classroom. It serves as a digital bridge between teachers and students, enabling seamless course management, assignment distribution, and grading in a streamlined environment.
+
+2. TECHNOLOGY STACK
+-------------------
+* Frontend: 
+  - HTML5 & Semantic Tags (Structure)
+  - Vanilla CSS (Custom Styling, Responsive Design, Dark/Light Mode)
+  - Vanilla JavaScript (Dynamic UI, State Management, API Integration)
+* Backend:
+  - Node.js & Express.js (Server-side logic and REST APIs)
+* Database:
+  - MongoDB (NoSQL database for flexible data storage)
+  - Mongoose (Object Data Modeling)
+* Security & Auth:
+  - JWT (JSON Web Tokens) for secure user sessions
+  - bcrypt (Password hashing for data protection)
+
+3. KEY FEATURES & MODULES
+-------------------------
+
+A. Authentication System
+- Secure Login and Signup functionality.
+- Dual-role system: "Teacher" and "Student".
+- Role-based Dashboard access.
+
+B. Teacher Module
+- Create Courses: Generate unique 6-character course codes.
+- Manage Content: Post announcements (text updates) and assignments.
+- Assignment Control: Set titles, descriptions, total marks, and deadlines.
+- Grading System: View student submissions, assign marks, and provide feedback.
+- Data Management: Export grades and submissions to CSV format for record-keeping.
+
+C. Student Module
+- Enroll in Courses: Join classes using unique course codes provided by teachers.
+- Interactive Learning: View announcements and download/read assignment details.
+- Submissions: Submit answers or links directly through the student portal.
+- Grade Tracking: View marks and teacher feedback for individual assignments.
+
+D. UI/UX Features
+- App Shell Architecture: Smooth navigation without full page reloads.
+- Responsive Design: Fully functional on Mobile, Tablet, and Desktop.
+- Dark/Light Mode: User-toggleable themes for better accessibility.
+- Real-time Notifications: Toast messages for success/error feedback.
+
+4. SYSTEM ARCHITECTURE
+----------------------
+The application follows a Client-Server architecture:
+1. Client (Frontend) sends HTTP requests along with JWT tokens.
+2. Server (Backend) validates the token through middleware.
+3. API Routes handle requests (e.g., /api/courses, /api/assignments).
+4. MongoDB stores and retrieves data using Mongoose schemas.
+5. Response is sent back to the client and rendered dynamically.
+
+5. DATABASE MODELS (SCHEMA)
+---------------------------
+- User: Name, Email, Password (hashed), Role (Teacher/Student).
+- Course: Name, Description, Unique Code, Teacher ID.
+- Enrollment: Links Students to Courses.
+- Announcement: Text content linked to a Course.
+- Assignment: Title, Deadline, Marks linked to a Course.
+- Submission: Student Answer, Marks, Feedback linked to an Assignment and Student.
+
+================================================================================
