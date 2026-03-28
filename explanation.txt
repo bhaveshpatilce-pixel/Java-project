@@ -7,7 +7,7 @@
 Classroom Lite is a modern, responsive Learning Management System (LMS) inspired by Google Classroom. It serves as a digital bridge between teachers and students, enabling seamless course management, assignment distribution, and grading in a streamlined environment.
 
 2. TECHNOLOGY STACK
--------------------
+
 * Frontend: 
   - HTML5 & Semantic Tags (Structure)
   - Vanilla CSS (Custom Styling, Responsive Design, Dark/Light Mode)
